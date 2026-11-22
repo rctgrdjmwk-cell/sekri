@@ -2,8 +2,15 @@
 import { Redis } from "@upstash/redis";
 import fs from "node:fs";
 
-const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+// Vercel può dare nomi diversi alle chiavi del database (es. KV_REST_API_URL o STORAGE_KV_REST_API_URL):
+// le cerco tutte, così funziona qualunque nome venga scelto.
+const env = (suffixes: string[]) => {
+  for (const s of suffixes) if (process.env[s]) return process.env[s];
+  const key = Object.keys(process.env).find((k) => suffixes.some((s) => k.endsWith("_" + s)));
+  return key ? process.env[key] : undefined;
+};
+const url = env(["KV_REST_API_URL", "UPSTASH_REDIS_REST_URL"]);
+const token = env(["KV_REST_API_TOKEN", "UPSTASH_REDIS_REST_TOKEN"]);
 const redis = url && token ? new Redis({ url, token }) : null;
 
 const LOCAL_FILE = "data.local.json";
